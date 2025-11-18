@@ -6,6 +6,8 @@
 #include "utils.h"
 #include "model_init.h"
 
+#define NUM_TOKENS 10
+
 int main(void) {
     // On heap because model is too large for stack
     Model *m = malloc(sizeof(Model));
@@ -19,11 +21,11 @@ int main(void) {
     float *logits = malloc(sizeof(float) * VOCAB_SIZE);
     CHECK_PTR(logits, "malloc logits");
 
-    forward_token(m, cache, 0, 0, logits);
-
-    for (int i = 0; i < 10; ++i) {
-        printf("logit[%d] = %f\n", i, logits[i]);
+    for (int i = 0; i < NUM_TOKENS; i++) {
+        forward_token(m, cache, i, 0, logits);
     }
+
+    printf("logit[%d] = %f\n", 0, logits[0]);
 
     free(logits);
     free(cache);

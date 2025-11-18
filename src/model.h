@@ -48,6 +48,9 @@
 /** @brief RMS normalization epsilon for numerical stability */
 #define RMS_EPS 1e-5f
 
+/** @brief Maximum length of input sequences */
+#define MAX_SEQ_LEN 128 // original is 32768
+
 /**
  * @struct Layer
  * @brief Single transformer layer containing attention and MLP components
@@ -140,3 +143,20 @@ typedef struct {
     Layer layers[N_LAYERS];
 
 } Model;
+
+/**
+ * @struct KVCache
+ * @brief Key-Value cache for efficient autoregressive generation
+ *
+ * This structure stores cached key and value projections from previous tokens
+ * to avoid recomputing them during autoregressive text generation. The cache
+ * is organized by layer and position for efficient access.
+ */
+typedef struct {
+    /** @brief Cached key projections [N_LAYERS x MAX_SEQ_LEN x (N_KV_HEADS * HEAD_DIM)] */
+    float key_cache[N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM];
+
+    /** @brief Cached value projections [N_LAYERS x MAX_SEQ_LEN x (N_KV_HEADS * HEAD_DIM)] */
+    float value_cache[N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM];
+} KVCache;
+

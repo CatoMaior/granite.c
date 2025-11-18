@@ -102,3 +102,35 @@ static inline void rms_norm(
         y[i] = x[i] * inv_rms * w[i];
     }
 }
+
+/**
+ * @brief Softmax activation function (in-place)
+ *
+ * Computes the softmax function on the input vector in-place, converting
+ * the values to a probability distribution that sums to 1.0.
+ * Uses the numerically stable formulation: softmax(x_i) = exp(x_i - max(x)) / sum(exp(x_j - max(x)))
+ *
+ * Formula: x[i] = exp(x[i] - max(x)) / sum_j(exp(x[j] - max(x)))
+ *
+ * @param x Input/output vector of size n (modified in-place)
+ * @param n Number of elements
+ */
+static inline void softmax_inplace(float *x, size_t n) {
+    if (n == 0) return;
+
+    float maxv = x[0];
+    for (size_t i = 1; i < n; ++i) {
+        if (x[i] > maxv) maxv = x[i];
+    }
+
+    float sum = 0.0f;
+    for (size_t i = 0; i < n; ++i) {
+        x[i] = expf(x[i] - maxv);
+        sum += x[i];
+    }
+
+    float inv = 1.0f / sum;
+    for (size_t i = 0; i < n; ++i) {
+        x[i] *= inv;
+    }
+}

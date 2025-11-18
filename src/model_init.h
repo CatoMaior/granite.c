@@ -19,3 +19,13 @@
  *         Typically, 0 indicates success, while non-zero values indicate an error.
  */
 void model_init(Model *m);
+
+/**
+ * @brief Load model weights from a file (placeholder for future implementation)
+ *
+ * This function will load pre-trained weights from a file into the model.
+ * Currently a imports random weights for testing purposes.
+ *
+ * @param m Pointer to the Model structure to load weights into
+ */
+void model_load_weights(Model *m);

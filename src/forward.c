@@ -4,7 +4,7 @@
 #include "model.h"
 #include <math.h>
 
-void forward_token(Model *m, int token_id, int pos, float *out_logits) {
+void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_logits) {
     (void)pos; // non lo usiamo ancora
 
     float x[D_MODEL];
@@ -17,9 +17,7 @@ void forward_token(Model *m, int token_id, int pos, float *out_logits) {
 
     // 2) passaggio nei layer (per ora non facciamo nulla, solo “echo”)
     for (int l = 0; l < N_LAYERS; ++l) {
-        (void)l;
-        // TODO: qui metteremo attention + MLP
-        // per ora lasciamo x invariato, o stampiamo qualcosa
+        forward_layer_attn(m, cache, l, pos, x);
         forward_layer_mlp(m, l, x);
     }
 
@@ -61,5 +59,95 @@ void forward_layer_mlp(Model *m, int layer_idx, float *x) {
     // 5) Residual: x += mlp_out
     for (int i = 0; i < D_MODEL; ++i) {
         x[i] += mlp_out[i];
+    }
+}
+
+void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float *x) {
+    Layer *L = &(m->layers[layer_idx]);
+
+    float x_norm[D_MODEL];
+    float q[D_MODEL];                   // 16 * 64 = 1024
+    float k_new[N_KV_HEADS * HEAD_DIM]; // 4 * 64 = 256
+    float v_new[N_KV_HEADS * HEAD_DIM];
+
+    // 1) RMSNorm
+    rms_norm(x_norm, x, L->attn_norm, D_MODEL, RMS_EPS);
+
+    // 2) Q, K, V proiezioni lineari
+    matvec(q, (const float *)L->w_q, x_norm, D_MODEL, D_MODEL);
+    matvec(k_new, (const float *)L->w_k, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
+    matvec(v_new, (const float *)L->w_v, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
+
+    // TODO: qui applicheremo RoPE a q e k_new
+
+    // 3) Scrivi K,V nella cache per questo token
+    if (pos >= MAX_SEQ_LEN) {
+        // per ora, se superiamo MAX_SEQ_LEN, tronchiamo (didattico)
+        return;
+    }
+    for (int i = 0; i < N_KV_HEADS * HEAD_DIM; ++i) {
+        cache->key_cache[layer_idx][pos][i] = k_new[i];
+        cache->value_cache[layer_idx][pos][i] = v_new[i];
+    }
+
+    // 4) Attenzione multi-head
+    float attn_out[D_MODEL]; // concatenazione delle 16 teste
+    for (int i = 0; i < D_MODEL; ++i)
+        attn_out[i] = 0.0f;
+
+    int seq_len = pos + 1; // numero di token visti finora (0..pos)
+
+    // scaling dell’attenzione (meta dice attention.scale = 1 / HEAD_DIM)
+    const float scale = 1.0f / sqrtf((float)HEAD_DIM); // o 0.015625f
+
+    // Loop sulle 16 teste Q
+    for (int h = 0; h < N_HEADS; ++h) {
+
+        int q_offset = h * HEAD_DIM; // in q[]
+        // MQA: testa Q h usa la KV-head (h % N_KV_HEADS)
+        int kv_head = h % N_KV_HEADS;
+        int kv_offset = kv_head * HEAD_DIM;
+
+        float scores[MAX_SEQ_LEN];
+
+        // 4.a) Calcolo score per ogni posizione t (dot(Q_h, K_{kv_head, t}))
+        for (int t = 0; t < seq_len; ++t) {
+            float *k_t = &(cache->key_cache[layer_idx][t][kv_offset]);
+            float s = 0.0f;
+            for (int i = 0; i < HEAD_DIM; ++i) {
+                s += q[q_offset + i] * k_t[i];
+            }
+            scores[t] = s * scale;
+        }
+
+        // 4.b) softmax sulle score
+        softmax_inplace(scores, seq_len);
+
+        // 4.c) combinazione pesata delle V
+        float head_out[HEAD_DIM];
+        for (int i = 0; i < HEAD_DIM; ++i)
+            head_out[i] = 0.0f;
+
+        for (int t = 0; t < seq_len; ++t) {
+            float weight = scores[t];
+            float *v_t = &(cache->value_cache[layer_idx][t][kv_offset]);
+            for (int i = 0; i < HEAD_DIM; ++i) {
+                head_out[i] += weight * v_t[i];
+            }
+        }
+
+        // 4.d) scrivi questa testa nella posizione corretta di attn_out
+        for (int i = 0; i < HEAD_DIM; ++i) {
+            attn_out[q_offset + i] = head_out[i];
+        }
+    }
+
+    // 5) Proiezione di output: attn_proj = attn_out * W_o
+    float attn_proj[D_MODEL];
+    matvec(attn_proj, (const float *)L->w_o, attn_out, D_MODEL, D_MODEL);
+
+    // 6) Residual: x += attn_proj
+    for (int i = 0; i < D_MODEL; ++i) {
+        x[i] += attn_proj[i];
     }
 }

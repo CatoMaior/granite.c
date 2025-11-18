@@ -13,14 +13,16 @@
  * @brief Perform a forward pass for a single token
  *
  * This function takes a token ID and runs it through the entire model
- * to produce output logits for all vocabulary tokens.
+ * to produce output logits for all vocabulary tokens. It processes the token
+ * through all layers using cached key-value pairs for efficient autoregressive generation.
  *
  * @param m Pointer to the Model structure containing all weights
+ * @param cache Pointer to the KVCache for storing/retrieving key-value pairs across layers
  * @param token_id Input token ID (0 to VOCAB_SIZE-1)
- * @param pos Position of the token in the sequence (currently unused)
+ * @param pos Position of the token in the sequence (0 to MAX_SEQ_LEN-1)
  * @param out_logits Output array to store logits [VOCAB_SIZE]
  */
-void forward_token(Model *m, int token_id, int pos, float *out_logits);
+void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_logits);
 
 /**
  * @brief Forward pass through a single layer's MLP (feed-forward) block
@@ -37,3 +39,25 @@ void forward_token(Model *m, int token_id, int pos, float *out_logits);
  * @param x Input/output vector of size D_MODEL (modified in-place with residual)
  */
 void forward_layer_mlp(Model *m, int layer_idx, float *x);
+
+/**
+ * @brief Forward pass through a single layer's attention block
+ *
+ * Performs the multi-head grouped-query attention (GQA) for one transformer layer:
+ * 1. RMS normalization of input
+ * 2. Compute Q, K, V projections
+ * 3. Apply RoPE (Rotary Position Embedding) to Q and K
+ * 4. Store K, V in cache for current position
+ * 5. Compute attention scores with all cached keys
+ * 6. Apply softmax to get attention weights
+ * 7. Weighted sum of values
+ * 8. Output projection
+ * 9. Residual connection (adds result to input x)
+ *
+ * @param m Pointer to the Model structure containing all weights
+ * @param cache Pointer to the KVCache for storing/retrieving key-value pairs
+ * @param layer_idx Index of the layer (0 to N_LAYERS-1)
+ * @param pos Current position in the sequence (0 to MAX_SEQ_LEN-1)
+ * @param x Input/output vector of size D_MODEL (modified in-place with residual)
+ */
+void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float *x);

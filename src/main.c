@@ -8,11 +8,11 @@
 int main(void) {
     // On heap because model is too large for stack
     Model *m = malloc(sizeof(Model));
-    check_ptr(m, "Failed to allocate memory for model\n");
+    CHECK_PTR(m, "malloc model");
     model_init(m);
 
     float *logits = malloc(sizeof(float) * VOCAB_SIZE);
-    check_ptr(logits, "Failed to allocate memory for logits\n");
+    CHECK_PTR(logits, "malloc logits");
 
     forward_token(m, 0, 0, logits);
 

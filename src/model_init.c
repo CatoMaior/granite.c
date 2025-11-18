@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 // Helper function to generate random float in given range
 static inline float randf(float min, float max) {
@@ -28,7 +27,7 @@ void model_init(Model *m) {
 
 void model_load_weights(Model *m) {
     // Initialize random seed
-    srand((unsigned int)time(NULL));
+    srand((unsigned int)42);
 
     // 1) Token embeddings [D_MODEL x VOCAB_SIZE]
     for (int i = 0; i < D_MODEL; ++i) {

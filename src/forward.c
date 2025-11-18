@@ -5,7 +5,6 @@
 #include <math.h>
 
 void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_logits) {
-    (void)pos; // non lo usiamo ancora
 
     float x[D_MODEL];
     float x_norm[D_MODEL];

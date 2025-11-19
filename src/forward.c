@@ -11,7 +11,9 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
 
     // 1) embedding lookup
     for (int i = 0; i < D_MODEL; ++i) {
-        x[i] = m->token_embd[i][token_id] * EMBEDDING_SCALE;
+        bf16_t w_bf16 = m->token_embd[i][token_id];
+        float w = bf16_to_f32(w_bf16);
+        x[i] = w * EMBEDDING_SCALE;
     }
 
     // 2) passaggio nei layer (per ora non facciamo nulla, solo “echo”)
@@ -27,7 +29,9 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
     for (int v = 0; v < VOCAB_SIZE; ++v) {
         float sum = 0.0f;
         for (int i = 0; i < D_MODEL; ++i) {
-            sum += m->lm_head[v][i] * x_norm[i];
+            bf16_t w_bf16 = m->token_embd[i][v];
+            float w = bf16_to_f32(w_bf16);
+            sum += w * x_norm[i];
         }
         out_logits[v] = sum * LOGIT_SCALE;
     }
@@ -46,14 +50,14 @@ void forward_layer_mlp(Model *m, int layer_idx, float *x) {
     rms_norm(x_norm, x, L->ffn_norm, D_MODEL, RMS_EPS);
 
     // 2) gate = W_gate * x_norm, up = W_up * x_norm
-    matvec(gate, (const float *)L->w_gate, x_norm, D_MODEL, D_FF);
-    matvec(up, (const float *)L->w_up, x_norm, D_MODEL, D_FF);
+    matvec_bf16(gate, (const bf16_t *)L->w_gate, x_norm, D_MODEL, D_FF);
+    matvec_bf16(up, (const bf16_t *)L->w_up, x_norm, D_MODEL, D_FF);
 
     // 3) hidden = SwiGLU(gate, up)
     swiglu(hidden, gate, up, D_FF);
 
     // 4) mlp_out = W_down * hidden
-    matvec(mlp_out, (const float *)L->w_down, hidden, D_FF, D_MODEL);
+    matvec_bf16(mlp_out, (const bf16_t *)L->w_down, hidden, D_FF, D_MODEL);
 
     // 5) Residual: x += mlp_out
     for (int i = 0; i < D_MODEL; ++i) {
@@ -73,9 +77,9 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
     rms_norm(x_norm, x, L->attn_norm, D_MODEL, RMS_EPS);
 
     // 2) Q, K, V proiezioni lineari
-    matvec(q, (const float *)L->w_q, x_norm, D_MODEL, D_MODEL);
-    matvec(k_new, (const float *)L->w_k, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
-    matvec(v_new, (const float *)L->w_v, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
+    matvec_bf16(q, (const bf16_t *)L->w_q, x_norm, D_MODEL, D_MODEL);
+    matvec_bf16(k_new, (const bf16_t *)L->w_k, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
+    matvec_bf16(v_new, (const bf16_t *)L->w_v, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
 
     // 3) Applica RoPE a Q e K per questa posizione
     apply_rope_qk(q, k_new, pos);
@@ -144,7 +148,7 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
 
     // 7) Proiezione di output: attn_proj = attn_out * W_o
     float attn_proj[D_MODEL];
-    matvec(attn_proj, (const float *)L->w_o, attn_out, D_MODEL, D_MODEL);
+    matvec_bf16(attn_proj, (const bf16_t *)L->w_o, attn_out, D_MODEL, D_MODEL);
 
     // 8) Residual: x += attn_proj
     for (int i = 0; i < D_MODEL; ++i) {

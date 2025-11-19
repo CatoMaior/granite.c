@@ -1,13 +1,14 @@
 #include "model_init.h"
-
+#include "dtype.h"
 #include "model.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 // Helper function to generate random float in given range
-static inline float randf(float min, float max) {
-    return min + ((float)rand() / (float)RAND_MAX) * (max - min);
+static inline bf16_t randbf16(float min, float max) {
+    float result = min + ((float)rand() / (float)RAND_MAX) * (max - min);
+    return f32_to_bf16(result);
 }
 
 void model_init(Model *m) {
@@ -32,7 +33,7 @@ void model_load_weights(Model *m) {
     // 1) Token embeddings [D_MODEL x VOCAB_SIZE]
     for (int i = 0; i < D_MODEL; ++i) {
         for (int j = 0; j < VOCAB_SIZE; ++j) {
-            m->token_embd[i][j] = randf(-0.1f, 0.1f);
+            m->token_embd[i][j] = randbf16(-0.1f, 0.1f);
         }
     }
 
@@ -44,7 +45,7 @@ void model_load_weights(Model *m) {
     // 3) Language modeling head [VOCAB_SIZE x D_MODEL]
     for (int i = 0; i < VOCAB_SIZE; ++i) {
         for (int j = 0; j < D_MODEL; ++j) {
-            m->lm_head[i][j] = randf(-0.1f, 0.1f);
+            m->lm_head[i][j] = randbf16(-0.1f, 0.1f);
         }
     }
 
@@ -65,49 +66,49 @@ void model_load_weights(Model *m) {
         // Query projection [D_MODEL x D_MODEL]
         for (int i = 0; i < D_MODEL; ++i) {
             for (int j = 0; j < D_MODEL; ++j) {
-                layer->w_q[i][j] = randf(-0.05f, 0.05f);
+                layer->w_q[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
 
         // Key projection [D_MODEL x (N_KV_HEADS * HEAD_DIM)]
         for (int i = 0; i < D_MODEL; ++i) {
             for (int j = 0; j < N_KV_HEADS * HEAD_DIM; ++j) {
-                layer->w_k[i][j] = randf(-0.05f, 0.05f);
+                layer->w_k[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
 
         // Value projection [D_MODEL x (N_KV_HEADS * HEAD_DIM)]
         for (int i = 0; i < D_MODEL; ++i) {
             for (int j = 0; j < N_KV_HEADS * HEAD_DIM; ++j) {
-                layer->w_v[i][j] = randf(-0.05f, 0.05f);
+                layer->w_v[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
 
         // Output projection [D_MODEL x D_MODEL]
         for (int i = 0; i < D_MODEL; ++i) {
             for (int j = 0; j < D_MODEL; ++j) {
-                layer->w_o[i][j] = randf(-0.05f, 0.05f);
+                layer->w_o[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
 
         // Gate projection [D_MODEL x D_FF]
         for (int i = 0; i < D_MODEL; ++i) {
             for (int j = 0; j < D_FF; ++j) {
-                layer->w_gate[i][j] = randf(-0.05f, 0.05f);
+                layer->w_gate[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
 
         // Up projection [D_MODEL x D_FF]
         for (int i = 0; i < D_MODEL; ++i) {
             for (int j = 0; j < D_FF; ++j) {
-                layer->w_up[i][j] = randf(-0.05f, 0.05f);
+                layer->w_up[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
 
         // Down projection [D_FF x D_MODEL]
         for (int i = 0; i < D_FF; ++i) {
             for (int j = 0; j < D_MODEL; ++j) {
-                layer->w_down[i][j] = randf(-0.05f, 0.05f);
+                layer->w_down[i][j] = randbf16(-0.05f, 0.05f);
             }
         }
     }

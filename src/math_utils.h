@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <omp.h>
+#include "dtype.h"
 
 /**
  * @brief Copy a vector from source to destination
@@ -134,5 +135,36 @@ static inline void softmax_inplace(float *x, size_t n) {
     float inv = 1.0f / sum;
     for (size_t i = 0; i < n; ++i) {
         x[i] *= inv;
+    }
+}
+
+#include "dtype.h"
+
+/**
+ * @brief Matrix-vector multiplication with bf16_t matrix, float vector and float output
+ *
+ * Computes out[j] = sum_i x[i] * W[i,j] where W is stored in row-major format.
+ *
+ * @param out Output vector of size out_dim
+ * @param mat Input matrix of size [in_dim x out_dim] in row-major order (bf16_t)
+ * @param x Input vector of size in_dim
+ * @param in_dim Input dimension (number of rows in matrix)
+ * @param out_dim Output dimension (number of columns in matrix)
+ */
+static inline void matvec_bf16(
+    float *out,
+    const bf16_t *mat,
+    const float *x,
+    size_t in_dim,
+    size_t out_dim) {
+    #pragma omp parallel for num_threads(12)
+    for (size_t j = 0; j < out_dim; ++j) {
+        float sum = 0.0f;
+        for (size_t i = 0; i < in_dim; ++i) {
+            bf16_t w_bf16 = mat[i * out_dim + j];
+            float w = bf16_to_f32(w_bf16);
+            sum += w * x[i];
+        }
+        out[j] = sum;
     }
 }

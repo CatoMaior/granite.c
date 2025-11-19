@@ -8,6 +8,7 @@
 
 #pragma once
 #include <stddef.h>
+#include "dtype.h"
 
 /** @brief Architecture identifier for Granite model */
 #define ARCH_GRANITE 1
@@ -77,27 +78,27 @@ typedef struct {
     // Stored row-major: [in_dim][out_dim]
 
     /** @brief Query projection matrix [D_MODEL x D_MODEL] */
-    float w_q[D_MODEL][D_MODEL];               // [1024, 1024]
+    bf16_t w_q[D_MODEL][D_MODEL];               // [1024, 1024]
 
     /** @brief Key projection matrix [D_MODEL x (N_KV_HEADS * HEAD_DIM)] */
-    float w_k[D_MODEL][N_KV_HEADS * HEAD_DIM]; // [1024, 256]
+    bf16_t w_k[D_MODEL][N_KV_HEADS * HEAD_DIM]; // [1024, 256]
 
     /** @brief Value projection matrix [D_MODEL x (N_KV_HEADS * HEAD_DIM)] */
-    float w_v[D_MODEL][N_KV_HEADS * HEAD_DIM]; // [1024, 256]
+    bf16_t w_v[D_MODEL][N_KV_HEADS * HEAD_DIM]; // [1024, 256]
 
     /** @brief Output projection matrix [D_MODEL x D_MODEL] */
-    float w_o[D_MODEL][D_MODEL];               // [1024, 1024]
+    bf16_t w_o[D_MODEL][D_MODEL];               // [1024, 1024]
 
     // MLP (SwiGLU: gate/up/down)
 
     /** @brief Gate projection for SwiGLU activation [D_MODEL x D_FF] */
-    float w_gate[D_MODEL][D_FF]; // [1024, 2048]
+    bf16_t w_gate[D_MODEL][D_FF]; // [1024, 2048]
 
     /** @brief Up projection for SwiGLU activation [D_MODEL x D_FF] */
-    float w_up[D_MODEL][D_FF];   // [1024, 2048]
+    bf16_t w_up[D_MODEL][D_FF];   // [1024, 2048]
 
     /** @brief Down projection for SwiGLU activation [D_FF x D_MODEL] */
-    float w_down[D_FF][D_MODEL]; // [2048, 1024]
+    bf16_t w_down[D_FF][D_MODEL]; // [2048, 1024]
 } Layer;
 
 /**
@@ -137,13 +138,13 @@ typedef struct {
     int d_ff;
 
     /** @brief Token embeddings [D_MODEL x VOCAB_SIZE] */
-    float token_embd[D_MODEL][VOCAB_SIZE];
+    bf16_t token_embd[D_MODEL][VOCAB_SIZE];
 
     /** @brief Output normalization weights [D_MODEL] */
     float output_norm[D_MODEL];
 
     /** @brief Language modeling head (weight tying with token_embd) [VOCAB_SIZE x D_MODEL] */
-    float lm_head[VOCAB_SIZE][D_MODEL];
+    bf16_t lm_head[VOCAB_SIZE][D_MODEL];
 
     /** @brief Array of transformer layers [N_LAYERS] */
     Layer layers[N_LAYERS];

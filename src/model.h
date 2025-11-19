@@ -51,6 +51,12 @@
 /** @brief Maximum length of input sequences */
 #define MAX_SEQ_LEN 128 // original is 32768
 
+/** @brief Rotary positional embedding dimension per head (RoPE) */
+#define ROPE_DIM 64
+
+/** @brief RoPE base frequency for rotary positional embeddings */
+#define ROPE_BASE 10000000.0f
+
 /**
  * @struct Layer
  * @brief Single transformer layer containing attention and MLP components

@@ -61,3 +61,23 @@ void forward_layer_mlp(Model *m, int layer_idx, float *x);
  * @param x Input/output vector of size D_MODEL (modified in-place with residual)
  */
 void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float *x);
+
+/**
+ * @brief Apply rotary positional embeddings (RoPE) to query and key vectors for a given token position.
+ *
+ * Applies the RoPE rotation in-place to the provided per-head query and key vectors for the specified
+ * token position. The feature dimension is treated as interleaved (even/odd) pairs and must be even.
+ *
+ * Steps:
+ * 1. Compute rotation coefficients (cos, sin) for this position and feature indices.
+ * 2. For each pair (2*i, 2*i+1) perform the complex rotation:
+ *    q_even' = q_even * cos - q_odd * sin
+ *    q_odd'  = q_even * sin + q_odd * cos
+ *    (same for k)
+ * 3. Store rotated components back into q and k.
+ *
+ * @param q Pointer to the query vector for a single token (modified in-place).
+ * @param k Pointer to the key vector for a single token (modified in-place).
+ * @param pos Token position (non-negative).
+ */
+void apply_rope_qk(float *q, float *k, int pos);

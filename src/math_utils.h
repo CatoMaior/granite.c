@@ -9,6 +9,7 @@
 #pragma once
 #include <math.h>
 #include <stddef.h>
+#include <omp.h>
 
 /**
  * @brief Copy a vector from source to destination
@@ -63,6 +64,7 @@ static inline void matvec(
     const float *x,
     size_t in_dim,
     size_t out_dim) {
+    #pragma omp parallel for num_threads(12)
     for (size_t j = 0; j < out_dim; ++j) {
         float sum = 0.0f;
         for (size_t i = 0; i < in_dim; ++i) {

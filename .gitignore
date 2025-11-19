@@ -2,4 +2,5 @@ build/
 *.data
 *.gguf
 .venv/
+granite-4.0-350m-BF16/
 granite-4.0-350m-BF16/*

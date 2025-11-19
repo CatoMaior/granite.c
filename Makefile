@@ -3,7 +3,7 @@ CFLAGS  = -Wall -Wextra -g -O0 -lm -fopenmp
 
 BUILD_DIR = build
 OBJ_DIR   = $(BUILD_DIR)/obj
-OUT       = $(BUILD_DIR)/app
+OUT       = $(BUILD_DIR)/granite-c
 
 SRC_ROOT = $(wildcard *.c)
 SRC_SRC  = $(wildcard src/*.c)

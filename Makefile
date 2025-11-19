@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -g -O0 -lm -fopenmp
+CFLAGS  = -Wall -Wextra -g -O0 -lm -fopenmp -ffast-math
 
 BUILD_DIR = build
 OBJ_DIR   = $(BUILD_DIR)/obj

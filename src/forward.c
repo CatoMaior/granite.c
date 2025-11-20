@@ -61,7 +61,7 @@ void forward_layer_mlp(Model *m, int layer_idx, float *x) {
 
     // 5) Residual: x += mlp_out
     for (int i = 0; i < D_MODEL; ++i) {
-        x[i] += mlp_out[i];
+        x[i] += mlp_out[i] * RESIDUAL_SCALE;
     }
 }
 
@@ -152,7 +152,7 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
 
     // 8) Residual: x += attn_proj
     for (int i = 0; i < D_MODEL; ++i) {
-        x[i] += attn_proj[i];
+        x[i] += attn_proj[i] * RESIDUAL_SCALE;
     }
 }
 

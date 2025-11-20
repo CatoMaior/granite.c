@@ -4,15 +4,21 @@
 #include "forward.h"
 #include "model.h"
 #include "utils.h"
+#include "math_utils.h"
 #include "model_init.h"
+#include "weights_loader.h"
 
-#define NUM_TOKENS 10
+#define NUM_TOKENS 1
+#define BASE_DIR "granite-4.0-350m-BF16"
 
 int main(void) {
     // On heap because model is too large for stack
     Model *m = malloc(sizeof(Model));
     CHECK_PTR(m, "malloc model");
-    model_init(m);
+
+    print_test_tensor(BASE_DIR);
+
+    model_init_from_dir(m, BASE_DIR);
 
     KVCache *cache = malloc(sizeof(KVCache));
     CHECK_PTR(cache, "malloc KVCache");

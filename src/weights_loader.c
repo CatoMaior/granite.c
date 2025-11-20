@@ -63,7 +63,7 @@ void print_test_tensor(const char *base_dir) {
     }
 
     printf("First %zu bytes of %s:\n", n, path);
-    for (int i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
         printf("0x%02x ", buf[i]);
     }
     printf("\n");

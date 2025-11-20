@@ -31,7 +31,25 @@ int main(void) {
         forward_token(m, cache, i, 0, logits);
     }
 
-    printf("logit[%d] = %f\n", 0, logits[0]);
+    // Print a sample logit and the min/max across the vocabulary
+    // printf("logit[%d] = %f\n", 0, logits[0]);
+
+    // compute and print min/max logits
+    int min_idx = 0, max_idx = 0;
+    float min_val = logits[0], max_val = logits[0];
+    for (int i = 1; i < VOCAB_SIZE; ++i) {
+        if (logits[i] < min_val) {
+            min_val = logits[i];
+            min_idx = i;
+        }
+        if (logits[i] > max_val) {
+            max_val = logits[i];
+            max_idx = i;
+        }
+    }
+
+    printf("logits min: idx=%d value=%f\n", min_idx, min_val);
+    printf("logits max: idx=%d value=%f\n", max_idx, max_val);
 
     free(logits);
     free(cache);

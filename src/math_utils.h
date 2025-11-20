@@ -7,10 +7,10 @@
  */
 
 #pragma once
-#include <math.h>
-#include <stddef.h>
-#include <omp.h>
 #include "dtype.h"
+#include <math.h>
+#include <omp.h>
+#include <stddef.h>
 
 /**
  * @brief Copy a vector from source to destination
@@ -137,8 +137,6 @@ static inline void softmax_inplace(float *x, size_t n) {
         x[i] *= inv;
     }
 }
-
-#include "dtype.h"
 
 /**
  * @brief Matrix-vector multiplication with bf16_t matrix, float vector and float output

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 import numpy as np
-from gguf import GGUFReader
+from gguf import GGUFReader, ReaderTensor
 
 
 def sanitize_name(name: str) -> str:
@@ -23,6 +23,19 @@ def numerical_sort_key(tensor_name: str) -> list:
     """
     import re
     return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', tensor_name)]
+
+
+def print_test_tensor(tensor: ReaderTensor) -> None:
+    """
+    Print information and first 10 bytes about of a tensor.
+    """
+    print(
+        f"Test tensor: {tensor.name}, dtype: {tensor.tensor_type.name}")
+    print("First 10 bytes:")
+    bytes_data = tensor.data.flatten()
+    for byte in bytes_data[:10]:
+        print(f"0x{byte:02x}", end=" ")
+    print("")
 
 
 def main(gguf_path: Path, weights_dir: Path, index_path: Path) -> None:
@@ -63,6 +76,9 @@ def main(gguf_path: Path, weights_dir: Path, index_path: Path) -> None:
     with index_path.open("w") as f:
         json.dump(index, f, indent=2)
     print(f"Index written to: {index_path}")
+
+    test_tensor = sorted_tensors[0]
+    print_test_tensor(test_tensor)
 
 
 if __name__ == "__main__":

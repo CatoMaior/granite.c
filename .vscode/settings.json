@@ -2,6 +2,7 @@
     "files.associations": {
         "*.ejs": "html",
         "*.spice": "spice",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "limits.h": "c"
     }
 }

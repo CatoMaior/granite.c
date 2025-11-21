@@ -101,15 +101,13 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
 
     int seq_len = pos + 1; // numero di token visti finora (0..pos)
 
-    // scaling dell’attenzione (meta dice attention.scale = 1 / HEAD_DIM)
-    const float scale = 1.0f / sqrtf((float)HEAD_DIM); // o 0.015625f
-
     // Loop sulle 16 teste Q
     for (int h = 0; h < N_HEADS; ++h) {
 
         int q_offset = h * HEAD_DIM; // in q[]
-        // MQA: testa Q h usa la KV-head (h % N_KV_HEADS)
-        int kv_head = h % N_KV_HEADS;
+        // int kv_head = h % N_KV_HEADS;
+        int n_rep = N_HEADS / N_KV_HEADS; // 16 / 4 = 4
+        int kv_head = h / n_rep;          // Q0,Q1,Q2,Q3 -> K0; Q4... -> K1
         int kv_offset = kv_head * HEAD_DIM;
 
         float scores[MAX_SEQ_LEN];
@@ -121,7 +119,7 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
             for (int i = 0; i < HEAD_DIM; ++i) {
                 s += q[q_offset + i] * k_t[i];
             }
-            scores[t] = s * scale;
+            scores[t] = s * ATTENTION_SCALE;
         }
 
         // 6.b) softmax sulle score

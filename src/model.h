@@ -46,6 +46,9 @@
 /** @brief Logit scaling factor for output */
 #define LOGIT_SCALE 4.0f
 
+/** @brief Attention scaling factor for output */
+#define ATTENTION_SCALE 0.015625f
+
 /** @brief RMS normalization epsilon for numerical stability */
 #define RMS_EPS 1e-5f
 
@@ -142,9 +145,6 @@ typedef struct {
 
     /** @brief Output normalization weights [D_MODEL] */
     float output_norm[D_MODEL];
-
-    /** @brief Language modeling head (weight tying with token_embd) [VOCAB_SIZE x D_MODEL] */
-    bf16_t lm_head[VOCAB_SIZE][D_MODEL];
 
     /** @brief Array of transformer layers [N_LAYERS] */
     Layer layers[N_LAYERS];

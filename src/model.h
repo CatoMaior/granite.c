@@ -46,6 +46,9 @@
 /** @brief Logit scaling factor for output */
 #define LOGIT_SCALE 4.0f
 
+/** @brief Attention scaling factor for output */
+#define ATTENTION_SCALE 0.015625f
+
 /** @brief RMS normalization epsilon for numerical stability */
 #define RMS_EPS 1e-5f
 

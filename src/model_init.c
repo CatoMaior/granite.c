@@ -42,13 +42,6 @@ void model_load_weights(Model *m) {
         m->output_norm[i] = 1.0f; // Initialize to 1.0 for layer norm
     }
 
-    // 3) Language modeling head [VOCAB_SIZE x D_MODEL]
-    for (int i = 0; i < VOCAB_SIZE; ++i) {
-        for (int j = 0; j < D_MODEL; ++j) {
-            m->lm_head[i][j] = randbf16(-0.1f, 0.1f);
-        }
-    }
-
     // 4) Layer weights
     for (int l = 0; l < N_LAYERS; ++l) {
         Layer *layer = &m->layers[l];

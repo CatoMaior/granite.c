@@ -146,9 +146,6 @@ typedef struct {
     /** @brief Output normalization weights [D_MODEL] */
     float output_norm[D_MODEL];
 
-    /** @brief Language modeling head (weight tying with token_embd) [VOCAB_SIZE x D_MODEL] */
-    bf16_t lm_head[VOCAB_SIZE][D_MODEL];
-
     /** @brief Array of transformer layers [N_LAYERS] */
     Layer layers[N_LAYERS];
 

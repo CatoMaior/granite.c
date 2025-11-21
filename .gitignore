@@ -4,3 +4,5 @@ build/
 .venv/
 granite-4.0-350m-BF16/
 granite-4.0-350m-BF16/*
+granite-4.0-350m-Q8_0/
+granite-4.0-350m-Q8_0/*

@@ -84,10 +84,10 @@ typedef struct {
     bf16_t w_q[D_MODEL][D_MODEL];               // [1024, 1024]
 
     /** @brief Key projection matrix [D_MODEL x (N_KV_HEADS * HEAD_DIM)] */
-    bf16_t w_k[D_MODEL][N_KV_HEADS * HEAD_DIM]; // [1024, 256]
+    bf16_t w_k[N_KV_HEADS * HEAD_DIM][D_MODEL];
 
     /** @brief Value projection matrix [D_MODEL x (N_KV_HEADS * HEAD_DIM)] */
-    bf16_t w_v[D_MODEL][N_KV_HEADS * HEAD_DIM]; // [1024, 256]
+    bf16_t w_v[N_KV_HEADS * HEAD_DIM][D_MODEL];
 
     /** @brief Output projection matrix [D_MODEL x D_MODEL] */
     bf16_t w_o[D_MODEL][D_MODEL];               // [1024, 1024]
@@ -95,13 +95,13 @@ typedef struct {
     // MLP (SwiGLU: gate/up/down)
 
     /** @brief Gate projection for SwiGLU activation [D_MODEL x D_FF] */
-    bf16_t w_gate[D_MODEL][D_FF]; // [1024, 2048]
+    bf16_t w_gate[D_FF][D_MODEL];
 
     /** @brief Up projection for SwiGLU activation [D_MODEL x D_FF] */
     bf16_t w_up[D_MODEL][D_FF];   // [1024, 2048]
 
     /** @brief Down projection for SwiGLU activation [D_FF x D_MODEL] */
-    bf16_t w_down[D_FF][D_MODEL]; // [2048, 1024]
+    bf16_t w_down[D_FF][D_MODEL];
 } Layer;
 
 /**
@@ -141,7 +141,8 @@ typedef struct {
     int d_ff;
 
     /** @brief Token embeddings [D_MODEL x VOCAB_SIZE] */
-    bf16_t token_embd[D_MODEL][VOCAB_SIZE];
+    // bf16_t token_embd[D_MODEL][VOCAB_SIZE];
+    bf16_t token_embd[VOCAB_SIZE][D_MODEL];
 
     /** @brief Output normalization weights [D_MODEL] */
     float output_norm[D_MODEL];

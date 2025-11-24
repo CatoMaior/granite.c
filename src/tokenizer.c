@@ -37,10 +37,7 @@ static char *read_line_strip(FILE *f) {
 
 int tokenizer_load_vocab(Tokenizer *tok, const char *vocab_path) {
     FILE *f = fopen(vocab_path, "r");
-    if (!f) {
-        fprintf(stderr, "Impossibile aprire vocab: %s\n", vocab_path);
-        return -1;
-    }
+    CHECK_PTR(f, "fopen vocab file");
 
     // conta le righe per sapere vocab_size
     int lines = 0;
@@ -62,18 +59,11 @@ int tokenizer_load_vocab(Tokenizer *tok, const char *vocab_path) {
 
     tok->vocab_size = lines;
     tok->id_to_token = calloc(lines, sizeof(char *));
-    if (!tok->id_to_token) {
-        fclose(f);
-        return -1;
-    }
+    CHECK_PTR(tok->id_to_token, "calloc id_to_token");
 
     for (int i = 0; i < lines; ++i) {
         char *line = read_line_strip(f);
-        if (!line) {
-            fprintf(stderr, "Errore leggendo la riga %d della vocab\n", i);
-            fclose(f);
-            return -1;
-        }
+        CHECK_PTR(line, "read_line_strip vocab");
         tok->id_to_token[i] = line;
     }
 

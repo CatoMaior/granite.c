@@ -1,4 +1,5 @@
 #include "tokenizer.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,7 @@
 static const char *SPACE_PREFIX = "Ġ";  // U+0120
 static const char *NEWLINE_TOKEN = "Ċ"; // U+010A
 
-// helper per leggere una linea (senza \n)
+// helper to read a line from file and strip newline
 static char *read_line_strip(FILE *f) {
     size_t cap = 256;
     size_t len = 0;
@@ -29,7 +30,7 @@ static char *read_line_strip(FILE *f) {
     }
     if (len == 0 && c == EOF) {
         free(buf);
-        return NULL; // fine file
+        return NULL; // end of file
     }
     buf[len] = '\0';
     return buf;
@@ -39,7 +40,7 @@ int tokenizer_load_vocab(Tokenizer *tok, const char *vocab_path) {
     FILE *f = fopen(vocab_path, "r");
     CHECK_PTR(f, "fopen vocab file");
 
-    // conta le righe per sapere vocab_size
+    // count lines to get vocab size
     int lines = 0;
     {
         int c;
@@ -52,7 +53,7 @@ int tokenizer_load_vocab(Tokenizer *tok, const char *vocab_path) {
                 in_line = 1;
             }
         }
-        // se il file non termina con \n ma ha testo, conta la riga
+        // if file does not end with newline, count last line
         if (in_line) lines++;
         rewind(f);
     }
@@ -93,7 +94,7 @@ void detokenize(
     for (size_t t = 0; t < n_ids; ++t) {
         int id = ids[t];
         if (id < 0 || id >= tok->vocab_size) {
-            // token sconosciuto: saltiamo o mettiamo qualcosa
+            // unknown token: skip or put something
             const char *unk = "<UNK>";
             size_t len = strlen(unk);
             if (pos + len + 1 >= out_size) break;
@@ -104,18 +105,18 @@ void detokenize(
 
         const char *piece = tok->id_to_token[id];
 
-        // gestiamo alcuni special
+        // handle some special tokens
         if (strcmp(piece, NEWLINE_TOKEN) == 0) {
             if (pos + 1 >= out_size) break;
             out[pos++] = '\n';
             continue;
         }
 
-        // se inizia con "Ġ", scrivi spazio e poi il resto del pezzo
+        // if starts with "Ġ", write space and then the rest of the piece
         if (strncmp(piece, SPACE_PREFIX, strlen(SPACE_PREFIX)) == 0) {
             if (pos + 1 >= out_size) break;
             out[pos++] = ' ';
-            piece += strlen(SPACE_PREFIX); // salta il prefisso
+            piece += strlen(SPACE_PREFIX); // skip prefix
         }
 
         size_t len = strlen(piece);

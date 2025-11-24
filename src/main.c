@@ -11,7 +11,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define NUM_TOKENS 100
+#define NUM_TOKENS 1000
 #define BASE_DIR "granite-4.0-350m-BF16"
 
 static int last_stream_lines = 0;
@@ -137,6 +137,11 @@ int main(void) {
 
         // scegli il prossimo token (greedy argmax)
         int next_id = sample_argmax(logits, VOCAB_SIZE);
+
+        // Check for end of text token (100257) and exit loop
+        if (next_id == 100257) {
+            break;
+        }
 
         tokens[length++] = next_id;
 

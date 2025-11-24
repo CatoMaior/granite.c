@@ -16,7 +16,7 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
         x[i] = w * EMBEDDING_SCALE;
     }
 
-    // 2) passaggio nei layer (per ora non facciamo nulla, solo “echo”)
+    // 2) forward through layers
     for (int l = 0; l < N_LAYERS; ++l) {
         forward_layer_attn(m, cache, l, pos, x);
         forward_layer_mlp(m, l, x);
@@ -76,17 +76,17 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
     // 1) RMSNorm
     rms_norm(x_norm, x, L->attn_norm, D_MODEL, RMS_EPS);
 
-    // 2) Q, K, V proiezioni lineari
+    // 2) Q, K, V linear projections
     matvec_bf16(q, (const bf16_t *)L->w_q, x_norm, D_MODEL, D_MODEL);
     matvec_bf16(k_new, (const bf16_t *)L->w_k, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
     matvec_bf16(v_new, (const bf16_t *)L->w_v, x_norm, D_MODEL, N_KV_HEADS * HEAD_DIM);
 
-    // 3) Applica RoPE a Q e K per questa posizione
+    // 3) Apply RoPE to Q and K for this position
     apply_rope_qk(q, k_new, pos);
 
-    // 4) Scrivi K,V nella cache per questo token
+    // 4) Write K,V to cache for this token
     if (pos >= MAX_SEQ_LEN) {
-        // per ora, se superiamo MAX_SEQ_LEN, tronchiamo (didattico)
+        // if we exceed MAX_SEQ_LEN, we truncate (didactic)
         return;
     }
     for (int i = 0; i < N_KV_HEADS * HEAD_DIM; ++i) {
@@ -94,25 +94,24 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
         cache->value_cache[layer_idx][pos][i] = v_new[i];
     }
 
-    // 5) Attenzione multi-head
-    float attn_out[D_MODEL]; // concatenazione delle 16 teste
+    // 5) Multi-head attention
+    float attn_out[D_MODEL]; // concatenation of the 16 heads
     for (int i = 0; i < D_MODEL; ++i)
         attn_out[i] = 0.0f;
 
-    int seq_len = pos + 1; // numero di token visti finora (0..pos)
+    int seq_len = pos + 1; // number of tokens seen so far (0..pos)
 
-    // Loop sulle 16 teste Q
+    // Loop over the 16 heads
     for (int h = 0; h < N_HEADS; ++h) {
 
-        int q_offset = h * HEAD_DIM; // in q[]
-        // int kv_head = h % N_KV_HEADS;
+        int q_offset = h * HEAD_DIM; // inside q[]
         int n_rep = N_HEADS / N_KV_HEADS; // 16 / 4 = 4
         int kv_head = h / n_rep;          // Q0,Q1,Q2,Q3 -> K0; Q4... -> K1
         int kv_offset = kv_head * HEAD_DIM;
 
         float scores[MAX_SEQ_LEN];
 
-        // 6.a) Calcolo score per ogni posizione t (dot(Q_h, K_{kv_head, t}))
+        // 6.a) Compute score for each position t (dot(Q_h, K_{kv_head, t}))
         for (int t = 0; t < seq_len; ++t) {
             float *k_t = &(cache->key_cache[layer_idx][t][kv_offset]);
             float s = 0.0f;
@@ -122,10 +121,10 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
             scores[t] = s * ATTENTION_SCALE;
         }
 
-        // 6.b) softmax sulle score
+        // 6.b) softmax on scores
         softmax_inplace(scores, seq_len);
 
-        // 6.c) combinazione pesata delle V
+        // 6.c) weighted combination of V
         float head_out[HEAD_DIM];
         for (int i = 0; i < HEAD_DIM; ++i)
             head_out[i] = 0.0f;
@@ -138,13 +137,13 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
             }
         }
 
-        // 6.d) scrivi questa testa nella posizione corretta di attn_out
+        // 6.d) Write this head to the correct position in attn_out
         for (int i = 0; i < HEAD_DIM; ++i) {
             attn_out[q_offset + i] = head_out[i];
         }
     }
 
-    // 7) Proiezione di output: attn_proj = attn_out * W_o
+    // 7) Output projection: attn_proj = attn_out * W_o
     float attn_proj[D_MODEL];
     matvec_bf16(attn_proj, (const bf16_t *)L->w_o, attn_out, D_MODEL, D_MODEL);
 
@@ -155,16 +154,16 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
 }
 
 void apply_rope_qk(float *q, float *k, int pos) {
-    // caso limite
+    // Limit case
     if (ROPE_DIM > HEAD_DIM) return;
 
-    // Precondizione: pos >= 0
+    // Precondition: pos >= 0
 
-    // 1) Applica RoPE a tutte le teste di Q (16 teste)
+    // 1) Apply RoPE to Q heads (16 heads)
     for (int h = 0; h < N_HEADS; ++h) {
         float *qh = q + h * HEAD_DIM;
 
-        // coppie (2i, 2i+1) fino a ROPE_DIM
+        // pairs (2i, 2i+1) up to ROPE_DIM
         for (int i = 0; i < ROPE_DIM; i += 2) {
             int pair_index = i / 2;
 
@@ -184,7 +183,7 @@ void apply_rope_qk(float *q, float *k, int pos) {
         }
     }
 
-    // 2) Applica RoPE alle teste K/V (4 teste)
+    // 2) Apply RoPE to K/V heads (4 heads)
     for (int h = 0; h < N_KV_HEADS; ++h) {
         float *kh = k + h * HEAD_DIM;
 

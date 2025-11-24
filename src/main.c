@@ -50,7 +50,7 @@ int main(void) {
 
     int input_length = length;
 
-    // 5) Loop di generazione
+    // 5) Generation loop
     for (int pos = 0; pos < NUM_TOKENS + input_length; ++pos) {
         int token_id = tokens[pos];
 
@@ -65,18 +65,18 @@ int main(void) {
         tokens[length++] = next_id;
     }
 
-    // 6) Detokenizza la sequenza
+    // 6) Detokenize the sequence
     char decoded[4096];
     int start_idx = 0;
     size_t n_ids = (size_t)(length - start_idx);
 
     detokenize(&tok, &tokens[start_idx], n_ids, decoded, sizeof(decoded));
 
-    printf("\n=== Sequenza di token ===\n");
+    printf("\n=== Token sequence ===\n");
     for (int i = 0; i < length; ++i) {
         printf("%d ", tokens[i]);
     }
-    printf("\n\n=== Testo decodificato ===\n");
+    printf("\n\n=== Decoded Text ===\n");
     printf("%s\n", decoded);
 
     // 7) Cleanup

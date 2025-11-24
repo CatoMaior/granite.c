@@ -11,7 +11,7 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
 
     // 1) embedding lookup
     for (int i = 0; i < D_MODEL; ++i) {
-        bf16_t w_bf16 = m->token_embd[i][token_id];
+        bf16_t w_bf16 = m->token_embd[token_id][i];
         float w = bf16_to_f32(w_bf16);
         x[i] = w * EMBEDDING_SCALE;
     }
@@ -29,7 +29,7 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
     for (int v = 0; v < VOCAB_SIZE; ++v) {
         float sum = 0.0f;
         for (int i = 0; i < D_MODEL; ++i) {
-            bf16_t w_bf16 = m->token_embd[i][v];
+            bf16_t w_bf16 = m->token_embd[v][i];
             float w = bf16_to_f32(w_bf16);
             sum += w * x_norm[i];
         }

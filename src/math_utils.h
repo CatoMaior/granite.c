@@ -157,9 +157,10 @@ static inline void matvec_bf16(
     size_t out_dim) {
     #pragma omp parallel for num_threads(12)
     for (size_t j = 0; j < out_dim; ++j) {
+        const bf16_t *w_row = mat + (j * in_dim);
         float sum = 0.0f;
         for (size_t i = 0; i < in_dim; ++i) {
-            bf16_t w_bf16 = mat[i * out_dim + j];
+            bf16_t w_bf16 = w_row[i];
             float w = bf16_to_f32(w_bf16);
             sum += w * x[i];
         }

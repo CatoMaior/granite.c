@@ -3,8 +3,7 @@
  * @brief Data type definitions and conversions for neural network computations
  *
  * This file provides support for BFloat16 (Brain Floating Point) format,
- * a 16-bit floating point format commonly used in deep learning for memory
- * efficiency while maintaining numerical stability.
+ * commonly used in LLMs.
  */
 
 #pragma once
@@ -22,9 +21,7 @@ typedef uint16_t bf16_t;
 /**
  * @brief Convert BFloat16 to 32-bit float
  *
- * Converts a BFloat16 value to standard 32-bit floating point by
- * shifting the 16-bit value into the upper half of the 32-bit representation.
- * This works because BFloat16 shares the same bit layout as the upper 16 bits of float32.
+ * Converts a BFloat16 value to standard 32-bit floating point.
  *
  * @param x BFloat16 value to convert
  * @return Converted 32-bit float value
@@ -42,9 +39,7 @@ static inline float bf16_to_f32(bf16_t x) {
 /**
  * @brief Convert 32-bit float to BFloat16
  *
- * Converts a 32-bit float to BFloat16 by truncating the lower 16 bits.
- * This performs a simple round-to-nearest-even operation by taking
- * only the upper 16 bits of the float32 representation.
+ * Converts a 32-bit float to BFloat16 doing round-to-nearest-even.
  *
  * @param x 32-bit float value to convert
  * @return Converted BFloat16 value

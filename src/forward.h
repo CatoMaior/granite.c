@@ -16,6 +16,12 @@
  * to produce output logits for all vocabulary tokens. It processes the token
  * through all layers using cached key-value pairs for efficient autoregressive generation.
  *
+ * Steps:
+ * 1. Embedding lookup
+ * 2. Forward through layers (attention and MLP)
+ * 3. Output normalization
+ * 4. Compute logits via lm_head projection
+ *
  * @param m Pointer to the Model structure containing all weights
  * @param cache Pointer to the KVCache for storing/retrieving key-value pairs across layers
  * @param token_id Input token ID (0 to VOCAB_SIZE-1)
@@ -28,11 +34,11 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
  * @brief Forward pass through a single layer's MLP (feed-forward) block
  *
  * Performs the MLP transformation for one transformer layer:
- * 1. RMS normalization of input
- * 2. Parallel gate and up projections
- * 3. SwiGLU activation (gated activation)
- * 4. Down projection back to model dimension
- * 5. Residual connection (adds result to input x)
+ * 1. RMS normalization of input (x_norm = RMSNorm(x) with ffn_norm)
+ * 2. Gate and up projections (gate = W_gate * x_norm, up = W_up * x_norm)
+ * 3. SwiGLU activation (hidden = SwiGLU(gate, up))
+ * 4. Down projection (mlp_out = W_down * hidden)
+ * 5. Residual connection (x += mlp_out)
  *
  * @param m Pointer to the Model structure containing all weights
  * @param layer_idx Index of the layer (0 to N_LAYERS-1)
@@ -44,15 +50,14 @@ void forward_layer_mlp(Model *m, int layer_idx, float *x);
  * @brief Forward pass through a single layer's attention block
  *
  * Performs the multi-head grouped-query attention (GQA) for one transformer layer:
- * 1. RMS normalization of input
- * 2. Compute Q, K, V projections
- * 3. Apply RoPE (Rotary Position Embedding) to Q and K
- * 4. Store K, V in cache for current position
- * 5. Compute attention scores with all cached keys
- * 6. Apply softmax to get attention weights
- * 7. Weighted sum of values
- * 8. Output projection
- * 9. Residual connection (adds result to input x)
+ * 1. RMS normalization
+ * 2. Q, K, V linear projections
+ * 3. Apply RoPE to Q and K for this position
+ * 4. Write K, V to cache for this token
+ * 5. Multi-head attention (compute scores, softmax, weighted combination)
+ * 6. (Sub-steps within 5: compute scores for each position, softmax, weighted combination of V)
+ * 7. Output projection (attn_proj = attn_out * W_o)
+ * 8. Residual connection (x += attn_proj)
  *
  * @param m Pointer to the Model structure containing all weights
  * @param cache Pointer to the KVCache for storing/retrieving key-value pairs
@@ -69,12 +74,11 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
  * token position. The feature dimension is treated as interleaved (even/odd) pairs and must be even.
  *
  * Steps:
- * 1. Compute rotation coefficients (cos, sin) for this position and feature indices.
- * 2. For each pair (2*i, 2*i+1) perform the complex rotation:
- *    q_even' = q_even * cos - q_odd * sin
- *    q_odd'  = q_even * sin + q_odd * cos
- *    (same for k)
- * 3. Store rotated components back into q and k.
+ * 1. Apply RoPE to Q heads (16 heads)
+ *    - For each pair (2i, 2i+1) up to ROPE_DIM, compute rotation coefficients (cos, sin)
+ *    - Perform complex rotation: q_even' = q_even * cos - q_odd * sin, q_odd' = q_even * sin + q_odd * cos
+ * 2. Apply RoPE to K/V heads (4 heads)
+ *    - Same rotation process as for Q heads
  *
  * @param q Pointer to the query vector for a single token (modified in-place).
  * @param k Pointer to the key vector for a single token (modified in-place).

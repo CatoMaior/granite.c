@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NUM_TOKENS 5
+#define NUM_TOKENS 15
 #define BASE_DIR "granite-4.0-350m-BF16"
 
 int main(void) {
@@ -40,8 +40,13 @@ int main(void) {
     int length = 0;
 
     // tokens[length++] = 100257; // Token ID for BOS (should be not required)
-    tokens[length++] = 13347;  // Token ID for "Hi"
-    tokens[length++] = 0;      // Token ID for "!"
+    // tokens[length++] = 13347;  // Token ID for "Hi"
+    // tokens[length++] = 0;      // Token ID for "!"
+    // tokens[length++] = 2028;   // Token ID for "This"
+    // tokens[length++] = 40;     // Token ID for "I"
+    // tokens[length++] = 1097;   // Token ID for "Ġam"
+    // tokens[length++] = 220;    // Token ID for "Ġ"
+    tokens[length++] = 9906;   // Token ID for "Hello"
 
     int input_length = length;
 

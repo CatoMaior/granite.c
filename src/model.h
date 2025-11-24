@@ -53,7 +53,7 @@
 #define RMS_EPS 1e-5f
 
 /** @brief Maximum length of input sequences */
-#define MAX_SEQ_LEN 128 // original is 32768
+#define MAX_SEQ_LEN 32768
 
 /** @brief Rotary positional embedding dimension per head (RoPE) */
 #define ROPE_DIM 64

@@ -3,6 +3,7 @@
         "*.ejs": "html",
         "*.spice": "spice",
         "*.inc": "cpp",
-        "limits.h": "c"
+        "limits.h": "c",
+        "model_init.h": "c"
     }
 }

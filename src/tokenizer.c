@@ -105,24 +105,122 @@ void detokenize(
 
         const char *piece = tok->id_to_token[id];
 
-        // handle some special tokens
-        if (strcmp(piece, NEWLINE_TOKEN) == 0) {
+        // handle newline tokens within the piece (up to 12)
+        const char *newline_pos;
+        const char *search_start = piece;
+        int newline_count = 0;
+
+        while ((newline_pos = strstr(search_start, NEWLINE_TOKEN)) != NULL && newline_count < 12) {
+            // Write everything before this newline token
+            size_t prefix_len = newline_pos - search_start;
+            if (prefix_len > 0) {
+                // Handle space tokens within this segment (up to 128)
+                const char *space_pos;
+                const char *space_search = search_start;
+                int space_count = 0;
+
+                while ((space_pos = strstr(space_search, SPACE_PREFIX)) != NULL &&
+                       space_pos < newline_pos && space_count < 128) {
+                    // Write everything before this space token
+                    size_t before_space_len = space_pos - space_search;
+                    if (before_space_len > 0) {
+                        if (pos + before_space_len >= out_size) break;
+                        memcpy(out + pos, space_search, before_space_len);
+                        pos += before_space_len;
+                    }
+
+                    // Write the space character
+                    if (pos + 1 >= out_size) break;
+                    out[pos++] = ' ';
+
+                    // Move past this space token
+                    space_search = space_pos + strlen(SPACE_PREFIX);
+                    space_count++;
+                }
+
+                // Write remaining text after last space token (or all if no space tokens)
+                size_t remaining_before_newline = newline_pos - space_search;
+                if (remaining_before_newline > 0) {
+                    if (pos + remaining_before_newline >= out_size) break;
+                    memcpy(out + pos, space_search, remaining_before_newline);
+                    pos += remaining_before_newline;
+                }
+            }
+
+            // Write the newline character
             if (pos + 1 >= out_size) break;
             out[pos++] = '\n';
+
+            // Move past this newline token
+            search_start = newline_pos + strlen(NEWLINE_TOKEN);
+            newline_count++;
+        }
+
+        // If we found newline tokens, handle the remainder after the last one
+        if (newline_count > 0) {
+            // Handle space tokens in the remainder (up to 128)
+            const char *space_pos;
+            const char *space_search = search_start;
+            int space_count = 0;
+
+            while ((space_pos = strstr(space_search, SPACE_PREFIX)) != NULL && space_count < 128) {
+                // Write everything before this space token
+                size_t before_space_len = space_pos - space_search;
+                if (before_space_len > 0) {
+                    if (pos + before_space_len >= out_size) break;
+                    memcpy(out + pos, space_search, before_space_len);
+                    pos += before_space_len;
+                }
+
+                // Write the space character
+                if (pos + 1 >= out_size) break;
+                out[pos++] = ' ';
+
+                // Move past this space token
+                space_search = space_pos + strlen(SPACE_PREFIX);
+                space_count++;
+            }
+
+            // Write remaining text after last space token
+            size_t remaining_len = strlen(space_search);
+            if (remaining_len > 0) {
+                if (pos + remaining_len >= out_size) break;
+                memcpy(out + pos, space_search, remaining_len);
+                pos += remaining_len;
+            }
             continue;
         }
 
-        // if starts with "Ġ", write space and then the rest of the piece
-        if (strncmp(piece, SPACE_PREFIX, strlen(SPACE_PREFIX)) == 0) {
+        // No newline tokens found - handle space tokens (up to 128)
+        const char *space_pos;
+        const char *space_search = piece;
+        int space_count = 0;
+
+        while ((space_pos = strstr(space_search, SPACE_PREFIX)) != NULL && space_count < 128) {
+            // Write everything before this space token
+            size_t before_space_len = space_pos - space_search;
+            if (before_space_len > 0) {
+                if (pos + before_space_len >= out_size) break;
+                memcpy(out + pos, space_search, before_space_len);
+                pos += before_space_len;
+            }
+
+            // Write the space character
             if (pos + 1 >= out_size) break;
             out[pos++] = ' ';
-            piece += strlen(SPACE_PREFIX); // skip prefix
+
+            // Move past this space token
+            space_search = space_pos + strlen(SPACE_PREFIX);
+            space_count++;
         }
 
-        size_t len = strlen(piece);
-        if (pos + len >= out_size) break;
-        memcpy(out + pos, piece, len);
-        pos += len;
+        // Write remaining text after last space token (or all if no space tokens found)
+        size_t remaining_len = strlen(space_search);
+        if (remaining_len > 0) {
+            if (pos + remaining_len >= out_size) break;
+            memcpy(out + pos, space_search, remaining_len);
+            pos += remaining_len;
+        }
     }
 
     if (pos >= out_size) pos = out_size - 1;

@@ -1,5 +1,5 @@
 CC      = gcc
-BASE_FLAGS  = -Wall -Wextra -lm -fopenmp -march=native
+BASE_FLAGS  = -Wall -Wextra -lm -fopenmp
 FAST_FLAGS  = -O3
 DEBUG_FLAGS = -O0 -g
 

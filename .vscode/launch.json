@@ -19,7 +19,7 @@
       "cwd": "${workspaceFolder}",
       "externalConsole": false,
       "MIMode": "gdb",
-      "preLaunchTask": "Build Granite.c",
+      "preLaunchTask": "Build Granite.c (debug)",
       "setupCommands": [
         {
           "text": "-enable-pretty-printing",

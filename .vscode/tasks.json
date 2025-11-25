@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Granite.c",
+      "label": "Build Granite.c (debug)",
       "type": "shell",
-      "command": "make",
+      "command": "make debug",
       "problemMatcher": [
         "$gcc"
       ],

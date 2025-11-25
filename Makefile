@@ -1,5 +1,7 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -g -O0 -lm -fopenmp -ffast-math
+BASE_FLAGS  = -Wall -Wextra -lm -fopenmp -march=native
+FAST_FLAGS  = -O3
+DEBUG_FLAGS = -O0 -g
 
 BUILD_DIR = build
 OBJ_DIR   = $(BUILD_DIR)/obj
@@ -11,7 +13,13 @@ SRC      = $(SRC_ROOT) $(SRC_SRC)
 
 OBJ      = $(patsubst %.c, $(OBJ_DIR)/%.o, $(notdir $(SRC)))
 
+# Default target: optimized build
+all: CFLAGS = $(BASE_FLAGS) $(FAST_FLAGS)
 all: $(OUT)
+
+# Debug target: debug build
+debug: CFLAGS = $(BASE_FLAGS) $(DEBUG_FLAGS)
+debug: clean $(OUT)
 
 $(OUT): $(OBJ)
 	@mkdir -p $(BUILD_DIR)
@@ -31,4 +39,4 @@ run: $(OUT)
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all run clean
+.PHONY: all debug run clean

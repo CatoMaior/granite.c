@@ -10,10 +10,10 @@
       "justMyCode": false
     },
     {
-      "name": "Debug C (Makefile)",
+      "name": "Debug granite.c",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/granite-c",
+      "program": "${workspaceFolder}/build/debug/granite-c",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

@@ -2,15 +2,27 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Granite.c (debug)",
+      "label": "Build Granite.c",
       "type": "shell",
-      "command": "make debug",
+      "command": "make -j",
       "problemMatcher": [
         "$gcc"
       ],
       "group": {
         "kind": "build",
         "isDefault": true
+      }
+    },
+    {
+      "label": "Build Granite.c (debug)",
+      "type": "shell",
+      "command": "make debug -j",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
       }
     },
     {

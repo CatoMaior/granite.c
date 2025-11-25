@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L
 #include "forward.h"
 #include "math_utils.h"
 #include "model.h"
@@ -9,9 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <time.h>
 #include <unistd.h>
 
-#define NUM_TOKENS 1000
+#define NUM_TOKENS 30
 #define BASE_DIR "granite-4.0-350m-BF16"
 
 static int last_stream_lines = 0;
@@ -106,6 +108,8 @@ int main(void) {
     // tokens[length++] = 2028;   // Token ID for "This"
     // tokens[length++] = 40;     // Token ID for "I"
     // tokens[length++] = 1097;   // Token ID for "Ġam"
+    // tokens[length++] = 264;   // Token ID for "Ġa"
+    // tokens[length++] = 11190;   // Token ID for "Ġhelpful"
     // tokens[length++] = 220;    // Token ID for "Ġ"
     tokens[length++] = 9906;   // Token ID for "Hello"
 
@@ -119,13 +123,27 @@ int main(void) {
 
     calculate_visual_height(STREAM_PREFIX, stream_buf, get_terminal_width());
 
+    // Start timing for token generation
+    struct timespec start_time, current_time;
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+
     // 5) Generation loop
     for (int pos = 0; pos < NUM_TOKENS + input_length; ++pos) {
         int token_id = tokens[pos];
 
         clear_previous_stream();
 
-        fprintf(stderr, "[pos=%02d] processing token_id = %d\n", pos, token_id);
+        // Calculate tokens per second
+        clock_gettime(CLOCK_MONOTONIC, &current_time);
+        float elapsed = (current_time.tv_sec - start_time.tv_sec) +
+                        (current_time.tv_nsec - start_time.tv_nsec) / 1e9;
+
+        // Number of tokens generated (excluding input tokens)
+        int generated_tokens = (pos >= input_length) ? (pos - input_length + 1) : 0;
+        float tokens_per_sec = (elapsed > 0 && generated_tokens > 0) ? generated_tokens / elapsed : 0.0;
+
+        fprintf(stderr, "[pos=%02d] token_id=%06d | Throughput: %.2f tok/s\n",
+                pos, token_id, tokens_per_sec);
 
         printf("%s%s", STREAM_PREFIX, stream_buf);
         fflush(stdout);
@@ -151,21 +169,7 @@ int main(void) {
 
     printf("\n");
 
-    // 6) Detokenize the sequence
-    // char decoded[4096];
-    // int start_idx = 0;
-    // size_t n_ids = (size_t)(length - start_idx);
-
-    // detokenize(&tok, &tokens[start_idx], n_ids, decoded, sizeof(decoded));
-
-    // printf("\n=== Token sequence ===\n");
-    // for (int i = 0; i < length; ++i) {
-    //     printf("%d ", tokens[i]);
-    // }
-    // printf("\n\n=== Decoded Text ===\n");
-    // printf("%s\n", decoded);
-
-    // 7) Cleanup
+    // 6) Cleanup
     free(logits);
     free(cache);
     tokenizer_free(&tok);

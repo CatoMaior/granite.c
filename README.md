@@ -1,10 +1,6 @@
 # Granite.c
 
-A minimal, educational implementation of the IBM Granite 4.0 350M transformer model in pure C. This project demonstrates the core concepts of large language model inference without relying on external deep learning frameworks.
-
-> **⚠️ Educational Purpose Only**
-> 
-> This project is designed for learning and understanding transformer architectures. It prioritizes code clarity and readability over performance optimization. Do not expect production-level speed or efficiency.
+A minimal, educational implementation of the IBM Granite 4.0 350M transformer model in pure C. This project demonstrates the core concepts of large language model inference without relying on external deep learning frameworks. This project is designed for learning and understanding transformer architectures. It prioritizes code clarity and readability over performance optimization. Do not expect production-level speed or efficiency.
 
 ## Overview
 
@@ -64,7 +60,7 @@ granite.c/
 
 ## Prerequisites
 
-- **C Compiler**: GCC with OpenMP support
+- **C Compiler**: GCC (OpenMP support is optional but helpful)
 - **Python 3.8+**: For weight extraction scripts
 - **Python Libraries**: 
   - `numpy`
@@ -190,44 +186,15 @@ Currently uses greedy decoding (argmax). To implement other sampling methods:
 - Modify the sampling logic in `src/main.c` after `forward_token()`
 - Consider temperature scaling, top-k, top-p, or other techniques
 
-## Build Options
-
-The Makefile uses these compiler flags:
-
-```makefile
-CFLAGS = -Wall -Wextra -g -O0 -lm -fopenmp -ffast-math
-```
-
-- `-g`: Debug symbols
-- `-O0`: No optimization (for debugging; use `-O3` for better performance)
-- `-fopenmp`: OpenMP support for parallelization
-- `-ffast-math`: Fast floating-point math
-
-## Common Issues
-
-### Segmentation Fault
-- Check that `MAX_SEQ_LEN` is not exceeded
-- Ensure model weights are correctly loaded
-- Verify memory allocation for `Model` and `KVCache`
-
-### Incorrect Output
-- Verify vocabulary file matches the model
-- Check that weight files are correctly extracted
-- Ensure BF16 to FP32 conversion is working
-
-### Slow Performance
-- This is expected! The code prioritizes clarity over speed
-- For faster inference, consider using optimized frameworks (llama.cpp, GGML, etc.)
-
 ## Learning Resources
 
 This implementation demonstrates concepts from:
 
-- **"Attention Is All You Need"** (Vaswani et al., 2017) - Original Transformer paper
-- **"RoFormer: Enhanced Transformer with Rotary Position Embedding"** (Su et al., 2021)
-- **"GQA: Training Generalized Multi-Query Transformer"** (Ainslie et al., 2023)
-- **"GLU Variants Improve Transformer"** (Shazeer, 2020) - SwiGLU activation
+- [**"Attention Is All You Need"**](https://arxiv.org/pdf/1706.03762) (Vaswani et al., 2017) - Original Transformer paper
+- [**"RoFormer: Enhanced Transformer with Rotary Position Embedding"**](https://arxiv.org/pdf/2104.09864) (Su et al., 2021)
+- [**"GQA: Training Generalized Multi-Query Transformer"**](https://arxiv.org/pdf/2305.13245) (Ainslie et al., 2023)
+- [**"GLU Variants Improve Transformer"**](https://arxiv.org/pdf/2002.05202) (Shazeer, 2020) - SwiGLU activation
 
 ## License
 
-This project is for educational purposes. Please refer to IBM Granite's license for model usage terms.
+This project is for educational purposes. Please refer to [IBM Granite's license](https://github.com/ibm-granite/granite-4.0-nano-language-models/blob/main/LICENSE) for model usage terms.

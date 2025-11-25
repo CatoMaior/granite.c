@@ -13,7 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define NUM_TOKENS 30
+#define NUM_TOKENS 1000
 #define BASE_DIR "granite-4.0-350m-BF16"
 
 static int last_stream_lines = 0;
@@ -118,14 +118,12 @@ int main(void) {
     char stream_buf[4096];
     detokenize(&tok, tokens, length, stream_buf, sizeof(stream_buf));
 
-    printf("%s%s", STREAM_PREFIX, stream_buf);
-    fflush(stdout);
-
-    calculate_visual_height(STREAM_PREFIX, stream_buf, get_terminal_width());
-
     // Start timing for token generation
     struct timespec start_time, current_time;
     clock_gettime(CLOCK_MONOTONIC, &start_time);
+
+    fprintf(stderr, "Token number | Token id | Hex token id | Throughput (tok/s)\n");
+    fprintf(stderr, "-----------------------------------------------------------\n");
 
     // 5) Generation loop
     for (int pos = 0; pos < NUM_TOKENS + input_length; ++pos) {
@@ -142,8 +140,8 @@ int main(void) {
         int generated_tokens = (pos >= input_length) ? (pos - input_length + 1) : 0;
         float tokens_per_sec = (elapsed > 0 && generated_tokens > 0) ? generated_tokens / elapsed : 0.0;
 
-        fprintf(stderr, "[pos=%02d] token_id=%06d | Throughput: %.2f tok/s\n",
-                pos, token_id, tokens_per_sec);
+        fprintf(stderr, "%12d | %8d |     0x%05x | %18.2f\n",
+                pos, token_id, token_id, tokens_per_sec);
 
         printf("%s%s", STREAM_PREFIX, stream_buf);
         fflush(stdout);

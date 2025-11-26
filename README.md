@@ -54,6 +54,7 @@ granite.c/
 │   └── weights/            # Extracted binary weight files
 ├── extract_weights.py      # GGUF to binary weight converter
 ├── export_vocab.py         # Vocabulary extraction script
+├── tokenize.py             # Tokenization script
 ├── Makefile                # Build configuration
 └── README.md               # This file
 ```
@@ -115,10 +116,10 @@ This will create the executable at `build/granite-c`.
 Execute the compiled binary:
 
 ```bash
-./build/granite-c
+./build/release/granite-c
 ```
 
-The program will generate text starting from the initial token "Hello" and display the output in real-time.
+The program will generate text starting from the initial token "Hello" and display the output in real-time. If you want to set a different starting point for the model change the initial token(s) in `src/main.c` and rebuild. You can use `tokenize.py` to get the tokenization for the desired input.
 
 ## Code Walkthrough
 

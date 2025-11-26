@@ -102,16 +102,50 @@ int main(void) {
     int tokens[NUM_TOKENS + 3];
     int length = 0;
 
-    // tokens[length++] = 100257; // Token ID for BOS (should be not required)
-    // tokens[length++] = 13347;  // Token ID for "Hi"
-    // tokens[length++] = 0;      // Token ID for "!"
-    // tokens[length++] = 2028;   // Token ID for "This"
-    // tokens[length++] = 40;     // Token ID for "I"
-    // tokens[length++] = 1097;   // Token ID for "Ġam"
-    // tokens[length++] = 264;   // Token ID for "Ġa"
-    // tokens[length++] = 11190;   // Token ID for "Ġhelpful"
-    // tokens[length++] = 220;    // Token ID for "Ġ"
-    tokens[length++] = 9906;   // Token ID for "Hello"
+    // --- Something to input ---
+    // tokens[length++] = 100257; // <|end_of_text|>
+    // tokens[length++] = 13347;  // "Hi"
+    // tokens[length++] = 0;      // "!"
+    // tokens[length++] = 2028;   // "This"
+    // tokens[length++] = 40;     // "I"
+    // tokens[length++] = 1097;   // "Ġam"
+    // tokens[length++] = 264;    // "Ġa"
+    // tokens[length++] = 11190;  // "Ġhelpful"
+    // tokens[length++] = 220;    // "Ġ"
+    tokens[length++] = 9906;   // "Hello"
+
+    // --- Standard chat sysprompt ---
+    // tokens[length++] = 100264; // <|start_of_role|>
+    // tokens[length++] = 9125;   // "system"
+    // tokens[length++] = 100265; // <|end_of_role|>
+    // tokens[length++] = 2675;   // "You"
+    // tokens[length++] = 527;    // "Ġare"
+    // tokens[length++] = 264;    // "Ġa"
+    // tokens[length++] = 11190;  // "Ġhelpful"
+    // tokens[length++] = 18328;  // "Ġassistant"
+    // tokens[length++] = 13;     // "."
+    // tokens[length++] = 5321;   // "ĠPlease"
+    // tokens[length++] = 6106;   // "Ġensure"
+    // tokens[length++] = 14847;  // "Ġresponses"
+    // tokens[length++] = 527;    // "Ġare"
+    // tokens[length++] = 6721;   // "Ġprofessional"
+    // tokens[length++] = 11;     // ","
+    // tokens[length++] = 13687;  // "Ġaccurate"
+    // tokens[length++] = 11;     // ","
+    // tokens[length++] = 323;    // "Ġand"
+    // tokens[length++] = 6220;   // "Ġsafe"
+    // tokens[length++] = 13;     // "."
+    // tokens[length++] = 100257; // <|end_of_text|>
+    // tokens[length++] = 198;    // \n
+    // tokens[length++] = 100264; // <|start_of_role|>
+    // tokens[length++] = 882;    // "user"
+    // tokens[length++] = 100265; // <|end_of_role|>
+    // tokens[length++] = 9906;   // "Hello"
+    // tokens[length++] = 100257; // <|end_of_text|>
+    // tokens[length++] = 198;    // \n
+    // tokens[length++] = 100264; // <|start_of_role|>
+    // tokens[length++] = 78191;  // "assistant"
+    // tokens[length++] = 100265; // <|end_of_role|>
 
     int input_length = length;
 

@@ -78,29 +78,29 @@ typedef struct {
     float ffn_norm[D_MODEL]; // blk.X.ffn_norm.weight  [1024]
 
     // Attention
-    // Stored row-major: [in_dim][out_dim]
+    // Stored: [out_dim][in_dim] as per GGUF file format
 
     /** @brief Query projection matrix [D_MODEL x D_MODEL] */
     bf16_t w_q[D_MODEL][D_MODEL];               // [1024, 1024]
 
-    /** @brief Key projection matrix [D_MODEL x (N_KV_HEADS * HEAD_DIM)] */
-    bf16_t w_k[N_KV_HEADS * HEAD_DIM][D_MODEL];
+    /** @brief Key projection matrix [D_MODEL][N_KV_HEADS * HEAD_DIM] */
+    bf16_t w_k[D_MODEL][N_KV_HEADS * HEAD_DIM];
 
-    /** @brief Value projection matrix [D_MODEL x (N_KV_HEADS * HEAD_DIM)] */
-    bf16_t w_v[N_KV_HEADS * HEAD_DIM][D_MODEL];
+    /** @brief Value projection matrix [D_MODEL][N_KV_HEADS * HEAD_DIM] */
+    bf16_t w_v[D_MODEL][N_KV_HEADS * HEAD_DIM];
 
-    /** @brief Output projection matrix [D_MODEL x D_MODEL] */
-    bf16_t w_o[D_MODEL][D_MODEL];               // [1024, 1024]
+    /** @brief Output projection matrix [D_MODEL][D_MODEL] */
+    bf16_t w_o[D_MODEL][D_MODEL];
 
     // MLP (SwiGLU: gate/up/down)
 
-    /** @brief Gate projection for SwiGLU activation [D_MODEL x D_FF] */
+    /** @brief Gate projection for SwiGLU activation [D_FF][D_MODEL] */
     bf16_t w_gate[D_FF][D_MODEL];
 
-    /** @brief Up projection for SwiGLU activation [D_MODEL x D_FF] */
-    bf16_t w_up[D_MODEL][D_FF];   // [1024, 2048]
+    /** @brief Up projection for SwiGLU activation [D_MODEL][D_FF] */
+    bf16_t w_up[D_MODEL][D_FF];
 
-    /** @brief Down projection for SwiGLU activation [D_FF x D_MODEL] */
+    /** @brief Down projection for SwiGLU activation [D_FF][D_MODEL] */
     bf16_t w_down[D_FF][D_MODEL];
 } Layer;
 
@@ -140,8 +140,7 @@ typedef struct {
     /** @brief Feed-forward dimension */
     int d_ff;
 
-    /** @brief Token embeddings [D_MODEL x VOCAB_SIZE] */
-    // bf16_t token_embd[D_MODEL][VOCAB_SIZE];
+    /** @brief Token embeddings [VOCAB_SIZE][D_MODEL] */
     bf16_t token_embd[VOCAB_SIZE][D_MODEL];
 
     /** @brief Output normalization weights [D_MODEL] */
@@ -161,10 +160,10 @@ typedef struct {
  * is organized by layer and position for efficient access.
  */
 typedef struct {
-    /** @brief Cached key projections [N_LAYERS x MAX_SEQ_LEN x (N_KV_HEADS * HEAD_DIM)] */
+    /** @brief Cached key projections [N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM] */
     float key_cache[N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM];
 
-    /** @brief Cached value projections [N_LAYERS x MAX_SEQ_LEN x (N_KV_HEADS * HEAD_DIM)] */
+    /** @brief Cached value projections [N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM] */
     float value_cache[N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM];
 } KVCache;
 

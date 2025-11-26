@@ -1,8 +1,9 @@
-#define _POSIX_C_SOURCE 199309L
+#include "console_utils.h"
 #include "forward.h"
 #include "math_utils.h"
 #include "model.h"
 #include "model_init.h"
+#include "timing.h"
 #include "tokenizer.h"
 #include "utils.h"
 #include "weights_loader.h"
@@ -10,72 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <time.h>
 #include <unistd.h>
 
 #define NUM_TOKENS 1000
 #define BASE_DIR "granite-4.0-350m-BF16"
 
-static int last_stream_lines = 0;
 static const char *STREAM_PREFIX = ">> OUTPUT: ";
-
-int get_terminal_width() {
-    struct winsize w;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
-        return w.ws_col;
-    }
-    return 80;
-}
-
-int calculate_visual_height(const char *prefix, const char *text, int term_width) {
-    int lines = 1;
-    int col = 0;
-
-    // Count prefix length
-    int prefix_len = strlen(prefix);
-    col += prefix_len;
-
-    // If prefix is already longer than width (rare case), handle wrap
-    while (col >= term_width) {
-        lines++;
-        col -= term_width;
-    }
-
-    // Now we scan the text character by character
-    for (int i = 0; text[i] != '\0'; i++) {
-        if (text[i] == '\n') {
-            // Explicit line break: new line, column resets to 0
-            lines++;
-            col = 0;
-        } else {
-            // Normal character
-            col++;
-            // If we exceed the width, the terminal wraps automatically
-            if (col >= term_width) {
-                lines++;
-                col = 0; // Or 1, depending on the terminal, but 0 is safe for counting
-            }
-        }
-    }
-    return lines;
-}
-
-void clear_previous_stream() {
-    if (last_stream_lines > 0) {
-        for (int i = 0; i < last_stream_lines; i++) {
-            // Go up one line and clear it
-            // \033[A = Up, \033[2K = Clear Line
-            if (i > 0) printf("\033[A");
-            printf("\r\033[2K");
-        }
-        // One last \r for safety
-        printf("\r");
-    } else {
-        // Base case: just clear the current line
-        printf("\r\033[2K");
-    }
-    fflush(stdout);
-}
 
 int main(void) {
     // On heap because model is too large for stack
@@ -152,54 +93,53 @@ int main(void) {
     char stream_buf[4096];
     detokenize(&tok, tokens, length, stream_buf, sizeof(stream_buf));
 
-    // Start timing for token generation
-    struct timespec start_time, current_time;
-    clock_gettime(CLOCK_MONOTONIC, &start_time);
+    // Initialize throughput tracking
+    ThroughputTracker timing;
+    timing_init(&timing);
 
-    fprintf(stderr, "Token number | Token id | Hex token id | Throughput (tok/s)\n");
-    fprintf(stderr, "-----------------------------------------------------------\n");
+    // Initialize console streaming state
+    StreamState console_state = {0};
+
+    fprintf(stderr, "Token number | Token id | Hex token id | Overall (tok/s) | Last 4 (tok/s)\n");
+    fprintf(stderr, "-------------------------------------------------------------------------\n");
 
     // 5) Generation loop
     for (int pos = 0; pos < NUM_TOKENS + input_length; ++pos) {
         int token_id = tokens[pos];
 
-        clear_previous_stream();
-
-        // Calculate tokens per second
-        clock_gettime(CLOCK_MONOTONIC, &current_time);
-        float elapsed = (current_time.tv_sec - start_time.tv_sec) +
-                        (current_time.tv_nsec - start_time.tv_nsec) / 1e9;
+        console_clear_previous_stream(&console_state);
 
         // Number of tokens generated (excluding input tokens)
         int generated_tokens = (pos >= input_length) ? (pos - input_length + 1) : 0;
-        float tokens_per_sec = (elapsed > 0 && generated_tokens > 0) ? generated_tokens / elapsed : 0.0;
 
-        fprintf(stderr, "%12d | %8d |     0x%05x | %18.2f\n",
-                pos, token_id, token_id, tokens_per_sec);
+        // Calculate throughput metrics
+        float overall_tps, window_tps;
+        timing_record_token(&timing, generated_tokens, &overall_tps, &window_tps);
 
+        fprintf(stderr, "%12d | %8d |      0x%05x | %15.2f | %14.2f\n",
+                pos, token_id, token_id, overall_tps, window_tps);
+
+        // Check for end of text token (100257) and exit loop
+        if (token_id == 100257 && pos >= input_length) break;
+
+        detokenize(&tok, tokens, length, stream_buf, sizeof(stream_buf));
         printf("%s%s", STREAM_PREFIX, stream_buf);
         fflush(stdout);
 
-        last_stream_lines = calculate_visual_height(STREAM_PREFIX, stream_buf, get_terminal_width());
+        console_update_stream_state(&console_state, STREAM_PREFIX, stream_buf,
+                                     console_get_terminal_width());
 
-        // forward del modello per questo token e posizione
+        // Forward del modello per questo token e posizione
         forward_token(m, cache, token_id, pos, logits);
 
-        // scegli il prossimo token (greedy argmax)
+        // Choose next token (greedy argmax)
         int next_id = sample_argmax(logits, VOCAB_SIZE);
 
-        // Check for end of text token (100257) and exit loop
-        if (next_id == 100257) {
-            break;
-        }
-
-        tokens[length++] = next_id;
-
-        detokenize(&tok, tokens, length, stream_buf, sizeof(stream_buf));
-
+        // If input parsing is done, append the generated token
+        if (pos >= input_length - 1) tokens[length++] = next_id;
     }
 
-    printf("\n");
+    printf("%s%s\n", STREAM_PREFIX, stream_buf);
 
     // 6) Cleanup
     free(logits);

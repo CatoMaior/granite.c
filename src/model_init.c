@@ -168,12 +168,12 @@ void model_set_rnd_weights(Model *m) {
         // Key projection [D_MODEL x (N_KV_HEADS * HEAD_DIM)]
         for (int i = 0; i < D_MODEL; ++i)
             for (int j = 0; j < N_KV_HEADS * HEAD_DIM; ++j)
-                layer->w_k[j][i] = randbf16(-0.05f, 0.05f);
+                layer->w_k[i][j] = randbf16(-0.05f, 0.05f);
 
         // Value projection [D_MODEL x (N_KV_HEADS * HEAD_DIM)]
         for (int i = 0; i < D_MODEL; ++i)
             for (int j = 0; j < N_KV_HEADS * HEAD_DIM; ++j)
-                layer->w_v[j][i] = randbf16(-0.05f, 0.05f);
+                layer->w_v[i][j] = randbf16(-0.05f, 0.05f);
 
         // Output projection [D_MODEL x D_MODEL]
         for (int i = 0; i < D_MODEL; ++i)

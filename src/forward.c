@@ -89,9 +89,12 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
         // if we exceed MAX_SEQ_LEN, we truncate (didactic)
         return;
     }
-    for (int i = 0; i < N_KV_HEADS * HEAD_DIM; ++i) {
-        cache->key_cache[layer_idx][pos][i] = k_new[i];
-        cache->value_cache[layer_idx][pos][i] = v_new[i];
+    // Store in head-first layout for better cache locality
+    for (int kv_h = 0; kv_h < N_KV_HEADS; ++kv_h) {
+        for (int i = 0; i < HEAD_DIM; ++i) {
+            cache->key_cache[layer_idx][kv_h][pos][i] = k_new[kv_h * HEAD_DIM + i];
+            cache->value_cache[layer_idx][kv_h][pos][i] = v_new[kv_h * HEAD_DIM + i];
+        }
     }
 
     // 5) Multi-head attention
@@ -107,13 +110,13 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
         int q_offset = h * HEAD_DIM; // inside q[]
         int n_rep = N_HEADS / N_KV_HEADS; // 16 / 4 = 4
         int kv_head = h / n_rep;          // Q0,Q1,Q2,Q3 -> K0; Q4... -> K1
-        int kv_offset = kv_head * HEAD_DIM;
 
         float scores[MAX_SEQ_LEN];
 
         // 6.a) Compute score for each position t (dot(Q_h, K_{kv_head, t}))
+        // New layout provides better cache locality: sequential access within head's position dimension
         for (int t = 0; t < seq_len; ++t) {
-            float *k_t = &(cache->key_cache[layer_idx][t][kv_offset]);
+            float *k_t = cache->key_cache[layer_idx][kv_head][t];
             float s = 0.0f;
             for (int i = 0; i < HEAD_DIM; ++i) {
                 s += q[q_offset + i] * k_t[i];
@@ -131,7 +134,7 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
 
         for (int t = 0; t < seq_len; ++t) {
             float weight = scores[t];
-            float *v_t = &(cache->value_cache[layer_idx][t][kv_offset]);
+            float *v_t = cache->value_cache[layer_idx][kv_head][t];
             for (int i = 0; i < HEAD_DIM; ++i) {
                 head_out[i] += weight * v_t[i];
             }

@@ -160,10 +160,10 @@ typedef struct {
  * is organized by layer and position for efficient access.
  */
 typedef struct {
-    /** @brief Cached key projections [N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM] */
-    float key_cache[N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM];
+    /** @brief Cached key projections [N_LAYERS][N_KV_HEADS][MAX_SEQ_LEN][HEAD_DIM] */
+    float key_cache[N_LAYERS][N_KV_HEADS][MAX_SEQ_LEN][HEAD_DIM];
 
-    /** @brief Cached value projections [N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM] */
-    float value_cache[N_LAYERS][MAX_SEQ_LEN][N_KV_HEADS * HEAD_DIM];
+    /** @brief Cached value projections [N_LAYERS][N_KV_HEADS][MAX_SEQ_LEN][HEAD_DIM] */
+    float value_cache[N_LAYERS][N_KV_HEADS][MAX_SEQ_LEN][HEAD_DIM];
 } KVCache;
 

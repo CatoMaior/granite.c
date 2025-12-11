@@ -19,6 +19,9 @@
 static const char *STREAM_PREFIX = ">> OUTPUT: ";
 
 int main(void) {
+    // Initialize RoPE cache with precomputed cos/sin values
+    rope_cache_init();
+
     // On heap because model is too large for stack
     Model *m = malloc(sizeof(Model));
     CHECK_PTR(m, "malloc model");

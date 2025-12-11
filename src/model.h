@@ -167,3 +167,22 @@ typedef struct {
     float value_cache[N_LAYERS][N_KV_HEADS][MAX_SEQ_LEN][HEAD_DIM];
 } KVCache;
 
+/**
+ * @struct RopeCache
+ * @brief Precomputed cosine and sine values for Rotary Position Embeddings
+ *
+ * This structure stores precomputed cos and sin values for all positions
+ * and frequency pairs to avoid expensive trigonometric computations at runtime.
+ * Values are computed once at initialization and reused for all tokens.
+ */
+typedef struct {
+    /** @brief Precomputed cosine values [MAX_SEQ_LEN][ROPE_DIM/2] */
+    float cos_cache[MAX_SEQ_LEN][ROPE_DIM / 2];
+
+    /** @brief Precomputed sine values [MAX_SEQ_LEN][ROPE_DIM/2] */
+    float sin_cache[MAX_SEQ_LEN][ROPE_DIM / 2];
+} RopeCache;
+
+/** @brief Global RoPE cache (initialized once at startup) */
+extern RopeCache g_rope_cache;
+

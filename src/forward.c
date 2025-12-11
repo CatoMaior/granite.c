@@ -4,6 +4,23 @@
 #include "model.h"
 #include <math.h>
 
+/** @brief Global RoPE cache instance */
+RopeCache g_rope_cache;
+
+void rope_cache_init(void) {
+    for (int pos = 0; pos < MAX_SEQ_LEN; ++pos) {
+        for (int pair_index = 0; pair_index < ROPE_DIM / 2; ++pair_index) {
+            // freq = base^(-2 * pair_index / ROPE_DIM)
+            float exponent = -2.0f * (float)pair_index / (float)ROPE_DIM;
+            float freq = powf(ROPE_BASE, exponent);
+            float angle = (float)pos * freq;
+
+            g_rope_cache.cos_cache[pos][pair_index] = cosf(angle);
+            g_rope_cache.sin_cache[pos][pair_index] = sinf(angle);
+        }
+    }
+}
+
 void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_logits) {
 
     float x[D_MODEL];
@@ -160,7 +177,11 @@ void apply_rope_qk(float *q, float *k, int pos) {
     // Limit case
     if (ROPE_DIM > HEAD_DIM) return;
 
-    // Precondition: pos >= 0
+    // Precondition: pos >= 0 && pos < MAX_SEQ_LEN
+
+    // Get precomputed cos/sin for this position
+    const float *cos_pos = g_rope_cache.cos_cache[pos];
+    const float *sin_pos = g_rope_cache.sin_cache[pos];
 
     // 1) Apply RoPE to Q heads (16 heads)
     for (int h = 0; h < N_HEADS; ++h) {
@@ -169,14 +190,8 @@ void apply_rope_qk(float *q, float *k, int pos) {
         // pairs (2i, 2i+1) up to ROPE_DIM
         for (int i = 0; i < ROPE_DIM; i += 2) {
             int pair_index = i / 2;
-
-            // freq_i = base^(-2 * pair_index / ROPE_DIM)
-            float exponent = -2.0f * (float)pair_index / (float)ROPE_DIM;
-            float freq = powf(ROPE_BASE, exponent);
-
-            float angle = (float)pos * freq;
-            float c = cosf(angle);
-            float s = sinf(angle);
+            float c = cos_pos[pair_index];
+            float s = sin_pos[pair_index];
 
             float x0 = qh[i];
             float x1 = qh[i + 1];
@@ -192,13 +207,8 @@ void apply_rope_qk(float *q, float *k, int pos) {
 
         for (int i = 0; i < ROPE_DIM; i += 2) {
             int pair_index = i / 2;
-
-            float exponent = -2.0f * (float)pair_index / (float)ROPE_DIM;
-            float freq = powf(ROPE_BASE, exponent);
-
-            float angle = (float)pos * freq;
-            float c = cosf(angle);
-            float s = sinf(angle);
+            float c = cos_pos[pair_index];
+            float s = sin_pos[pair_index];
 
             float x0 = kh[i];
             float x1 = kh[i + 1];

@@ -85,3 +85,12 @@ void forward_layer_attn(Model *m, KVCache *cache, int layer_idx, int pos, float 
  * @param pos Token position (non-negative).
  */
 void apply_rope_qk(float *q, float *k, int pos);
+
+/**
+ * @brief Initialize the global RoPE cache with precomputed cos/sin values
+ *
+ * This function must be called once at program startup before any forward passes.
+ * It precomputes all cosine and sine values for rotary positional embeddings
+ * to avoid expensive trigonometric operations during inference.
+ */
+void rope_cache_init(void);

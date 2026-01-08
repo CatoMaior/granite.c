@@ -42,16 +42,13 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
     // 3) output norm
     rms_norm(x_norm, x, m->output_norm, D_MODEL, RMS_EPS);
 
-    // 4) logits = x_norm * lm_head
+    // 4) logits = (x_norm * lm_head) * scale
+    matvec_bf16(out_logits, (const bf16_t *)m->token_embd, x_norm, D_MODEL, VOCAB_SIZE);
+    #pragma omp parallel for num_threads(12)
     for (int v = 0; v < VOCAB_SIZE; ++v) {
-        float sum = 0.0f;
-        for (int i = 0; i < D_MODEL; ++i) {
-            bf16_t w_bf16 = m->token_embd[v][i];
-            float w = bf16_to_f32(w_bf16);
-            sum += w * x_norm[i];
-        }
-        out_logits[v] = sum * LOGIT_SCALE;
+        out_logits[v] *= LOGIT_SCALE;
     }
+    
 }
 
 void forward_layer_mlp(Model *m, int layer_idx, float *x) {

@@ -44,7 +44,7 @@ void forward_token(Model *m, KVCache *cache, int token_id, int pos, float *out_l
 
     // 4) logits = (x_norm * lm_head) * scale
     matvec_bf16(out_logits, (const bf16_t *)m->token_embd, x_norm, D_MODEL, VOCAB_SIZE);
-    #pragma omp parallel for num_threads(12)
+    #pragma omp parallel for num_threads(MATVEC_THREADS)
     for (int v = 0; v < VOCAB_SIZE; ++v) {
         out_logits[v] *= LOGIT_SCALE;
     }

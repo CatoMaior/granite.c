@@ -54,11 +54,11 @@ def main(gguf_path: Path, weights_dir: Path, index_path: Path) -> None:
     for tensor in sorted_tensors:
         name = tensor.name
         data = tensor.data  # np.ndarray
-        dtype = tensor.tensor_type.name
+        out_dtype = tensor.tensor_type.name
 
         flat = data.flatten()
 
-        filename = sanitize_name(name) + f"_{dtype}.bin"
+        filename = sanitize_name(name) + f"_{out_dtype}.bin"
         out_path = weights_dir / filename
 
         flat.tofile(out_path)
@@ -66,7 +66,7 @@ def main(gguf_path: Path, weights_dir: Path, index_path: Path) -> None:
         # add to the JSON index
         index["tensors"].append({
             "name": name,
-            "dtype": tensor.tensor_type.name,
+            "dtype": out_dtype,
             "shape": list(data.shape),
             "filename": filename
         })
@@ -82,7 +82,8 @@ def main(gguf_path: Path, weights_dir: Path, index_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    base_dir = Path("granite-4.0-350m-BF16")
+    #base_dir = Path("granite-4.0-350m-BF16")
+    base_dir = Path("granite-4.0-350m-Q8_0")
     gguf_path = base_dir / "model.gguf"
     weights_dir = base_dir / "weights"
     index_path = base_dir / "weights_index.json"

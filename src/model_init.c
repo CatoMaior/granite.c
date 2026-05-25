@@ -6,15 +6,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+static WeightsType infer_weights_type_from_dir(const char *base_dir) {
+    if (strstr(base_dir, "Q8_0") != NULL) {
+        return WEIGHTS_TYPE_Q8_0;
+    }
+    return WEIGHTS_TYPE_BF16;
+}
+
 void model_init_from_dir(Model *m, const char *base_dir) {
     // zero all fields
     memset(m, 0, sizeof(Model));
 
     model_set_meta(m);
+    WeightsType weights_type = infer_weights_type_from_dir(base_dir);
 
     // 1) token embedding BF16: [D_MODEL, VOCAB_SIZE]
-    load_bf16_tensor(
+    load_tensor_as_bf16(
         base_dir,
+        weights_type,
         "token_embd.weight",
         &m->token_embd[0][0],
         (size_t)D_MODEL * (size_t)VOCAB_SIZE);
@@ -51,32 +60,36 @@ void model_init_from_dir(Model *m, const char *base_dir) {
 
         // attn_q.weight [1024,1024]
         snprintf(name, sizeof(name), "blk.%d.attn_q.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_q[0][0],
             (size_t)D_MODEL * (size_t)D_MODEL);
 
         // attn_k.weight [256,1024]
         snprintf(name, sizeof(name), "blk.%d.attn_k.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_k[0][0],
             (size_t)D_MODEL * (size_t)(N_KV_HEADS * HEAD_DIM));
 
         // attn_v.weight [256,1024]
         snprintf(name, sizeof(name), "blk.%d.attn_v.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_v[0][0],
             (size_t)D_MODEL * (size_t)(N_KV_HEADS * HEAD_DIM));
 
         // attn_output.weight [1024,1024]
         snprintf(name, sizeof(name), "blk.%d.attn_output.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_o[0][0],
             (size_t)D_MODEL * (size_t)D_MODEL);
@@ -85,24 +98,27 @@ void model_init_from_dir(Model *m, const char *base_dir) {
 
         // ffn_gate.weight [2048,1024]
         snprintf(name, sizeof(name), "blk.%d.ffn_gate.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_gate[0][0],
             (size_t)D_MODEL * (size_t)D_FF);
 
         // ffn_up.weight [1024,2048]
         snprintf(name, sizeof(name), "blk.%d.ffn_up.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_up[0][0],
             (size_t)D_MODEL * (size_t)D_FF);
 
         // ffn_down.weight [2048,1024]
         snprintf(name, sizeof(name), "blk.%d.ffn_down.weight", l);
-        load_bf16_tensor(
+        load_tensor_as_bf16(
             base_dir,
+            weights_type,
             name,
             &L->w_down[0][0],
             (size_t)D_FF * (size_t)D_MODEL);

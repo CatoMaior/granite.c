@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #define NUM_TOKENS 1000
+// #define BASE_DIR "granite-4.0-350m-Q8_0"
 #define BASE_DIR "granite-4.0-350m-BF16"
 
 static const char *STREAM_PREFIX = ">> OUTPUT: ";

@@ -12,6 +12,8 @@
 #include <omp.h>
 #include <stddef.h>
 
+#define MATVEC_THREADS 12
+
 /**
  * @brief Copy a vector from source to destination
  *
@@ -65,7 +67,7 @@ static inline void matvec(
     const float *x,
     size_t in_dim,
     size_t out_dim) {
-    #pragma omp parallel for num_threads(12)
+    #pragma omp parallel for num_threads(MATVEC_THREADS)
     for (size_t j = 0; j < out_dim; ++j) {
         float sum = 0.0f;
         for (size_t i = 0; i < in_dim; ++i) {
@@ -155,7 +157,7 @@ static inline void matvec_bf16(
     const float *x,
     size_t in_dim,
     size_t out_dim) {
-    #pragma omp parallel for num_threads(12)
+    #pragma omp parallel for num_threads(MATVEC_THREADS)
     for (size_t j = 0; j < out_dim; ++j) {
         const bf16_t *w_row = mat + (j * in_dim);
         float sum = 0.0f;
